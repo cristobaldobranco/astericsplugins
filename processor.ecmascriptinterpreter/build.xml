@@ -2,13 +2,14 @@
 
     <property name="component.id" value="processor.ECMAScriptInterpreter"/>
     <!-- set global properties for this build -->
+    <property name="arecodelocation" location="../../../../eclipseworkspace/AsTeRICS/ARE"/>
     <property name="build" location="../out/production/${component.id}"/>
     <property name="src.java" location="src/main/java"/>
     <property name="dist" location=".."/>
-    <property name="runtime" location="../../../bin/ARE"/>
-    <property name="osgi" location="../../osgi"/>
-    <property name="middleware" location="../../middleware"/>
-    <property name="services" location="../../services"/>
+    <property name="runtime" location="${arecodelocation}/../bin/ARE"/>
+    <property name="osgi" location="${arecodelocation}/osgi"/>
+    <property name="middleware" location="${arecodelocation}/middleware"/>
+    <property name="services" location="${arecodelocation}/services"/>
     <property name="classpath" location=".."/>
        <path id="asterics.classpath">
         <pathelement location="bin"/>

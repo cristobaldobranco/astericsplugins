@@ -47,7 +47,7 @@ import eu.asterics.mw.services.AREServices;
  * 
  * 
  *  
- * @author <your name> [<your email address>]
+ * @author Christoph Weiss [christoph.weiss@gmail.com]
  *         Date: 
  *         Time: 
  */

@@ -3,7 +3,7 @@
             xsi:noNamespaceSchemaLocation="bundle_model.xsd">
 
     <componentType id="asterics.ECMAScriptInterpreter"
-                   canonical_name="eu.asterics.component.processor.ecmascriptinterpreter.ECMAScriptInterpreterInstance">
+                   canonical_name="org.whitesoft.asterics.component.processor.ecmascriptinterpreter.ECMAScriptInterpreterInstance">
         <type subtype="Scripting">processor</type>
         <singleton>false</singleton>
         <description>A plugin that can interpret ECMAScript files</description>
