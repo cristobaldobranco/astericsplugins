@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<componentTypes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:noNamespaceSchemaLocation="bundle_model.xsd">
+
+    <componentType id="asterics.ECMAScriptInterpreter"
+                   canonical_name="eu.asterics.component.processor.ecmascriptinterpreter.ECMAScriptInterpreterInstance">
+        <type subtype="Scripting">processor</type>
+        <singleton>false</singleton>
+        <description>A plugin that can interpret ECMAScript files</description>
+        <ports>
+			<inputPort id="inputPort1">
+				<description>input port description</description>
+				<mustBeConnected>false</mustBeConnected>
+				<dataType>string</dataType>
+			</inputPort>
+
+			<outputPort id="outputPort1">
+				<description>output port description</description>
+				<dataType>string</dataType>
+			</outputPort>
+
+        </ports>
+		<events>
+			<eventListenerPort id="elpPort1">
+				<description>elp description</description>
+			</eventListenerPort>
+
+			<eventTriggererPort id="etpPort1">
+				<description>etp description</description>
+			</eventTriggererPort>
+
+		</events>			
+        <properties>
+			<property name="scriptname"
+				type="string"
+				value=" "
+				description="the script to be executed"/>
+
+        </properties>
+
+    </componentType>
+</componentTypes>
