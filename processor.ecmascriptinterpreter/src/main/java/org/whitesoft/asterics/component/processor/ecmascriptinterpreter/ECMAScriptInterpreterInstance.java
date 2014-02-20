@@ -28,18 +28,20 @@
 package org.whitesoft.asterics.component.processor.ecmascriptinterpreter;
 
 
-import java.util.logging.Logger;
-import eu.asterics.mw.data.ConversionUtils;
+import java.io.FileNotFoundException;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
+
 import eu.asterics.mw.model.runtime.AbstractRuntimeComponentInstance;
-import eu.asterics.mw.model.runtime.IRuntimeInputPort;
-import eu.asterics.mw.model.runtime.IRuntimeOutputPort;
 import eu.asterics.mw.model.runtime.IRuntimeEventListenerPort;
 import eu.asterics.mw.model.runtime.IRuntimeEventTriggererPort;
-import eu.asterics.mw.model.runtime.impl.DefaultRuntimeOutputPort;
-import eu.asterics.mw.model.runtime.impl.DefaultRuntimeInputPort;
+import eu.asterics.mw.model.runtime.IRuntimeInputPort;
+import eu.asterics.mw.model.runtime.IRuntimeOutputPort;
 import eu.asterics.mw.model.runtime.impl.DefaultRuntimeEventTriggererPort;
-import eu.asterics.mw.services.AstericsErrorHandling;
-import eu.asterics.mw.services.AREServices;
+import eu.asterics.mw.model.runtime.impl.DefaultRuntimeInputPort;
+import eu.asterics.mw.model.runtime.impl.DefaultRuntimeOutputPort;
 
 /**
  * 
@@ -53,7 +55,7 @@ import eu.asterics.mw.services.AREServices;
  */
 public class ECMAScriptInterpreterInstance extends AbstractRuntimeComponentInstance
 {
-	final IRuntimeOutputPort opOutputPort1 = new DefaultRuntimeOutputPort();
+	final IRuntimeOutputPort [] opOutputPorts = new IRuntimeOutputPort[NUMBER_OF_OUTPUTS];
 	// Usage of an output port e.g.: opMyOutPort.sendData(ConversionUtils.intToBytes(10)); 
 
 	final IRuntimeEventTriggererPort etpEtpPort1 = new DefaultRuntimeEventTriggererPort();
@@ -63,14 +65,30 @@ public class ECMAScriptInterpreterInstance extends AbstractRuntimeComponentInsta
 
 	// declare member variables here
 
-  
+    ScriptEngine engine;  
+    
+    static final int NUMBER_OF_INPUTS = 8;
+    static final int NUMBER_OF_OUTPUTS = 8;
+    
+    String [] input = new String[NUMBER_OF_INPUTS];
+	final IRuntimeInputPort [] ipInputPorts  = new IRuntimeInputPort[NUMBER_OF_INPUTS];
+    
     
    /**
     * The class constructor.
     */
     public ECMAScriptInterpreterInstance()
     {
-        // empty constructor
+    	for (int i = 0; i < ipInputPorts.length; i++)
+    	{
+    		ipInputPorts[i] = new InputPort(i);
+    	}
+
+    	for (int i = 0; i < opOutputPorts.length; i++)
+    	{
+    		opOutputPorts[i] = new DefaultRuntimeOutputPort();
+    	}
+    	
     }
 
    /**
@@ -80,9 +98,11 @@ public class ECMAScriptInterpreterInstance extends AbstractRuntimeComponentInsta
     */
     public IRuntimeInputPort getInputPort(String portID)
     {
-		if ("inputPort1".equalsIgnoreCase(portID))
+		if (portID.startsWith("inputPort"))
 		{
-			return ipInputPort1;
+			String strstr = portID.replace("inputPort", "");
+			int idx = Integer.parseInt(strstr);
+			return ipInputPorts[idx - 1];
 		}
 
 		return null;
@@ -95,9 +115,11 @@ public class ECMAScriptInterpreterInstance extends AbstractRuntimeComponentInsta
      */
     public IRuntimeOutputPort getOutputPort(String portID)
 	{
-		if ("outputPort1".equalsIgnoreCase(portID))
+		if (portID.startsWith("outputPort"))
 		{
-			return opOutputPort1;
+			String strstr = portID.replace("outputPort", "");
+			int idx = Integer.parseInt(strstr);
+			return opOutputPorts[idx - 1];
 		}
 
 		return null;
@@ -158,26 +180,63 @@ public class ECMAScriptInterpreterInstance extends AbstractRuntimeComponentInsta
 		if ("scriptname".equalsIgnoreCase(propertyName))
 		{
 			final Object oldValue = propScriptname;
-			propScriptname = (String)newValue;
+			propScriptname = (String) newValue;
 			return oldValue;
 		}
 
         return null;
     }
 
+    private void evalScript()
+    {
+		try {
+			engine.eval(new java.io.FileReader(propScriptname));
+		} catch (FileNotFoundException | ScriptException e) {
+			e.printStackTrace();
+		} 
+    }
+    
      /**
       * Input Ports for receiving values.
       */
-	private final IRuntimeInputPort ipInputPort1  = new DefaultRuntimeInputPort()
-	{
-		public void receiveData(byte[] data)
+    class InputPort implements IRuntimeInputPort
+    {
+    	int index; 
+    	
+    	public InputPort(int index)
+    	{
+    		this.index = index;
+    	}
+
+		@Override
+		public void receiveData(byte[] data) 
 		{
-				 // insert data reception handling here, e.g.: 
-				 // myVar = ConversionUtils.doubleFromBytes(data); 
-				 // myVar = ConversionUtils.stringFromBytes(data); 
-				 // myVar = ConversionUtils.intFromBytes(data); 
+			input[index] = new String(data);
+			evalScript();
 		}
-	};
+
+		@Override
+		public void startBuffering(AbstractRuntimeComponentInstance c,
+				String portID) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void stopBuffering(AbstractRuntimeComponentInstance c,
+				String portID) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public boolean isBuffered() {
+			return false;
+		}
+    	
+    };
+    
+			
 
 
      /**
@@ -199,8 +258,10 @@ public class ECMAScriptInterpreterInstance extends AbstractRuntimeComponentInsta
       @Override
       public void start()
       {
-
           super.start();
+          engine = new ScriptEngineManager().getEngineByName("javascript");
+          engine.put("input", input);
+          engine.put("output", opOutputPorts);
       }
 
      /**
