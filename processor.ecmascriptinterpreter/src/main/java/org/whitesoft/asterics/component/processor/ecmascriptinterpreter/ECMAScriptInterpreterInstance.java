@@ -29,6 +29,8 @@ package org.whitesoft.asterics.component.processor.ecmascriptinterpreter;
 
 
 import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -65,7 +67,7 @@ public class ECMAScriptInterpreterInstance extends AbstractRuntimeComponentInsta
 
 	// declare member variables here
 
-    ScriptEngine engine;  
+    //engine;  
     
     static final int NUMBER_OF_INPUTS = 8;
     static final int NUMBER_OF_OUTPUTS = 8;
@@ -189,11 +191,24 @@ public class ECMAScriptInterpreterInstance extends AbstractRuntimeComponentInsta
 
     private void evalScript()
     {
+    	ScriptEngine engine;
+    	FileReader r = null;
 		try {
-			engine.eval(new java.io.FileReader(propScriptname));
+			
+		  engine = new ScriptEngineManager().getEngineByName("javascript");
+          engine.put("input", input);
+          engine.put("output", opOutputPorts);
+          r = new java.io.FileReader(propScriptname); 
+          engine.eval(r);
 		} catch (FileNotFoundException | ScriptException e) {
 			e.printStackTrace();
 		} 
+		try {
+			r.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		engine = null;
     }
     
      /**
@@ -259,9 +274,6 @@ public class ECMAScriptInterpreterInstance extends AbstractRuntimeComponentInsta
       public void start()
       {
           super.start();
-          engine = new ScriptEngineManager().getEngineByName("javascript");
-          engine.put("input", input);
-          engine.put("output", opOutputPorts);
       }
 
      /**
