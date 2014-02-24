@@ -13,27 +13,140 @@
 				<mustBeConnected>false</mustBeConnected>
 				<dataType>string</dataType>
 			</inputPort>
-
+			<inputPort id="inputPort2">
+				<description>input port description</description>
+				<mustBeConnected>false</mustBeConnected>
+				<dataType>string</dataType>
+			</inputPort>
+			<inputPort id="inputPort3">
+				<description>input port description</description>
+				<mustBeConnected>false</mustBeConnected>
+				<dataType>string</dataType>
+			</inputPort>
+			<inputPort id="inputPort4">
+				<description>input port description</description>
+				<mustBeConnected>false</mustBeConnected>
+				<dataType>string</dataType>
+			</inputPort>
+			<inputPort id="inputPort5">
+				<description>input port description</description>
+				<mustBeConnected>false</mustBeConnected>
+				<dataType>string</dataType>
+			</inputPort>
+			<inputPort id="inputPort6">
+				<description>input port description</description>
+				<mustBeConnected>false</mustBeConnected>
+				<dataType>string</dataType>
+			</inputPort>
+			<inputPort id="inputPort7">
+				<description>input port description</description>
+				<mustBeConnected>false</mustBeConnected>
+				<dataType>string</dataType>
+			</inputPort>
+		    <inputPort id="inputPort8">
+				<description>input port description</description>
+				<mustBeConnected>false</mustBeConnected>
+				<dataType>string</dataType>
+			</inputPort>
+							
+			    					
 			<outputPort id="outputPort1">
 				<description>output port description</description>
 				<dataType>string</dataType>
 			</outputPort>
 
+			<outputPort id="outputPort2">
+				<description>output port description</description>
+				<dataType>string</dataType>
+			</outputPort>
+
+			<outputPort id="outputPort3">
+				<description>output port description</description>
+				<dataType>string</dataType>
+			</outputPort>
+			
+			<outputPort id="outputPort4">
+				<description>output port description</description>
+				<dataType>string</dataType>
+			</outputPort>
+						
+			<outputPort id="outputPort5">
+				<description>output port description</description>
+				<dataType>string</dataType>
+			</outputPort>
+			
+			<outputPort id="outputPort6">
+				<description>output port description</description>
+				<dataType>string</dataType>
+			</outputPort>
+			
+			<outputPort id="outputPort7">
+				<description>output port description</description>
+				<dataType>string</dataType>
+			</outputPort>
+			
+			<outputPort id="outputPort8">
+				<description>output port description</description>
+				<dataType>string</dataType>
+			</outputPort>
+																								
         </ports>
 		<events>
 			<eventListenerPort id="elpPort1">
 				<description>elp description</description>
 			</eventListenerPort>
-
+			<eventListenerPort id="elpPort2">
+				<description>elp description</description>
+			</eventListenerPort>
+			<eventListenerPort id="elpPort3">
+				<description>elp description</description>
+			</eventListenerPort>
+			<eventListenerPort id="elpPort4">
+				<description>elp description</description>
+			</eventListenerPort>
+			<eventListenerPort id="elpPort5">
+				<description>elp description</description>
+			</eventListenerPort>
+			<eventListenerPort id="elpPort6">
+				<description>elp description</description>
+			</eventListenerPort>
+			<eventListenerPort id="elpPort7">
+				<description>elp description</description>
+			</eventListenerPort>
+			<eventListenerPort id="elpPort8">
+				<description>elp description</description>
+			</eventListenerPort>
+																											
 			<eventTriggererPort id="etpPort1">
 				<description>etp description</description>
 			</eventTriggererPort>
-
+			<eventTriggererPort id="etpPort2">
+				<description>etp description</description>
+			</eventTriggererPort>
+			<eventTriggererPort id="etpPort3">
+				<description>etp description</description>
+			</eventTriggererPort>
+			<eventTriggererPort id="etpPort4">
+				<description>etp description</description>
+			</eventTriggererPort>
+			<eventTriggererPort id="etpPort5">
+				<description>etp description</description>
+			</eventTriggererPort>
+			<eventTriggererPort id="etpPort6">
+				<description>etp description</description>
+			</eventTriggererPort>
+			<eventTriggererPort id="etpPort7">
+				<description>etp description</description>
+			</eventTriggererPort>
+			<eventTriggererPort id="etpPort8">
+				<description>etp description</description>
+			</eventTriggererPort>
+																					
 		</events>			
         <properties>
 			<property name="scriptname"
 				type="string"
-				value=" "
+				value=""
 				description="the script to be executed"/>
 
         </properties>

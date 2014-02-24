@@ -30,8 +30,8 @@ package org.whitesoft.asterics.component.processor.ecmascriptinterpreter;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.IOException;
 
+import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
@@ -42,7 +42,6 @@ import eu.asterics.mw.model.runtime.IRuntimeEventTriggererPort;
 import eu.asterics.mw.model.runtime.IRuntimeInputPort;
 import eu.asterics.mw.model.runtime.IRuntimeOutputPort;
 import eu.asterics.mw.model.runtime.impl.DefaultRuntimeEventTriggererPort;
-import eu.asterics.mw.model.runtime.impl.DefaultRuntimeInputPort;
 import eu.asterics.mw.model.runtime.impl.DefaultRuntimeOutputPort;
 
 /**
@@ -57,30 +56,32 @@ import eu.asterics.mw.model.runtime.impl.DefaultRuntimeOutputPort;
  */
 public class ECMAScriptInterpreterInstance extends AbstractRuntimeComponentInstance
 {
+	final IRuntimeInputPort [] ipInputPorts  = new IRuntimeInputPort[NUMBER_OF_INPUTS];
 	final IRuntimeOutputPort [] opOutputPorts = new IRuntimeOutputPort[NUMBER_OF_OUTPUTS];
 	// Usage of an output port e.g.: opMyOutPort.sendData(ConversionUtils.intToBytes(10)); 
 
-	final IRuntimeEventTriggererPort etpEtpPort1 = new DefaultRuntimeEventTriggererPort();
+	final IRuntimeEventListenerPort  [] elpEventListenerPorts = new IRuntimeEventListenerPort[NUMBER_OF_EVENT_INPUTS]; 
+	final IRuntimeEventTriggererPort [] etpEventTriggerPorts = new IRuntimeEventTriggererPort[NUMBER_OF_EVENT_OUTPUTS];
 	// Usage of an event trigger port e.g.: etpMyEtPort.raiseEvent();
 
-	String propScriptname = " ";
+	String propScriptname = "";
 
 	// declare member variables here
 
-    //engine;  
+	ScriptEngine engine;
+	Object scriptclass = null;	
     
     static final int NUMBER_OF_INPUTS = 8;
     static final int NUMBER_OF_OUTPUTS = 8;
-    
-    String [] input = new String[NUMBER_OF_INPUTS];
-	final IRuntimeInputPort [] ipInputPorts  = new IRuntimeInputPort[NUMBER_OF_INPUTS];
-    
+    static final int NUMBER_OF_EVENT_INPUTS = 8;
+    static final int NUMBER_OF_EVENT_OUTPUTS = 8;
     
    /**
     * The class constructor.
     */
     public ECMAScriptInterpreterInstance()
     {
+
     	for (int i = 0; i < ipInputPorts.length; i++)
     	{
     		ipInputPorts[i] = new InputPort(i);
@@ -89,6 +90,17 @@ public class ECMAScriptInterpreterInstance extends AbstractRuntimeComponentInsta
     	for (int i = 0; i < opOutputPorts.length; i++)
     	{
     		opOutputPorts[i] = new DefaultRuntimeOutputPort();
+    	}
+    	
+
+    	for (int i = 0; i < elpEventListenerPorts.length; i++)
+    	{
+    		elpEventListenerPorts[i] = new EventListenerPort(i);
+    	}
+    	
+    	for (int i = 0; i < etpEventTriggerPorts.length; i++)
+    	{
+    		etpEventTriggerPorts[i] = new DefaultRuntimeEventTriggererPort();
     	}
     	
     }
@@ -134,11 +146,12 @@ public class ECMAScriptInterpreterInstance extends AbstractRuntimeComponentInsta
      */
     public IRuntimeEventListenerPort getEventListenerPort(String eventPortID)
     {
-		if ("elpPort1".equalsIgnoreCase(eventPortID))
+		if (eventPortID.startsWith("elpPort"))
 		{
-			return elpElpPort1;
+			String strstr = eventPortID.replace("elpPort", "");
+			int idx = Integer.parseInt(strstr);
+			return elpEventListenerPorts[idx - 1];
 		}
-
         return null;
     }
 
@@ -149,11 +162,12 @@ public class ECMAScriptInterpreterInstance extends AbstractRuntimeComponentInsta
      */
     public IRuntimeEventTriggererPort getEventTriggererPort(String eventPortID)
     {
-		if ("etpPort1".equalsIgnoreCase(eventPortID))
+		if (eventPortID.startsWith("etpPort"))
 		{
-			return etpEtpPort1;
+			String strstr = eventPortID.replace("etpPort", "");
+			int idx = Integer.parseInt(strstr);
+			return etpEventTriggerPorts[idx - 1];
 		}
-
         return null;
     }
 		
@@ -185,32 +199,10 @@ public class ECMAScriptInterpreterInstance extends AbstractRuntimeComponentInsta
 			propScriptname = (String) newValue;
 			return oldValue;
 		}
-
+ 
         return null;
     }
 
-    private void evalScript()
-    {
-    	ScriptEngine engine;
-    	FileReader r = null;
-		try {
-			
-		  engine = new ScriptEngineManager().getEngineByName("javascript");
-          engine.put("input", input);
-          engine.put("output", opOutputPorts);
-          r = new java.io.FileReader(propScriptname); 
-          engine.eval(r);
-		} catch (FileNotFoundException | ScriptException e) {
-			e.printStackTrace();
-		} 
-		try {
-			r.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		engine = null;
-    }
-    
      /**
       * Input Ports for receiving values.
       */
@@ -226,8 +218,15 @@ public class ECMAScriptInterpreterInstance extends AbstractRuntimeComponentInsta
 		@Override
 		public void receiveData(byte[] data) 
 		{
-			input[index] = new String(data);
-			evalScript();
+			if (scriptclass != null)
+			{
+				Invocable inv = (Invocable) engine;
+				try {
+					inv.invokeMethod(scriptclass, "dataInput", index, new String(data));
+				} catch (NoSuchMethodException | ScriptException e) {
+					e.printStackTrace();
+				}
+			}
 		}
 
 		@Override
@@ -248,24 +247,40 @@ public class ECMAScriptInterpreterInstance extends AbstractRuntimeComponentInsta
 		public boolean isBuffered() {
 			return false;
 		}
-    	
     };
-    
-			
-
-
+ 
      /**
       * Event Listerner Ports.
       */
-	final IRuntimeEventListenerPort elpElpPort1 = new IRuntimeEventListenerPort()
+	class EventListenerPort implements IRuntimeEventListenerPort
 	{
+		int index; 
+		
+		public EventListenerPort(int idx)
+		{
+			this.index = idx;
+		}
+		
 		public void receiveEvent(final String data)
 		{
-				 // insert event handling here 
+			if (scriptclass != null)
+			{
+				Invocable inv = (Invocable) engine;
+				try {
+					inv.invokeMethod(scriptclass, "eventInput", index);
+				} catch (NoSuchMethodException | ScriptException e) {
+					e.printStackTrace();
+				}
+			}
 		}
 	};
 
+
+	// the script is provided with the vars:
+	// output:   an array of size 8 representing 8 IRuntimeOutputPorts
+	// eventout: an array of size 8 representing 8 IRuntimeEventTriggererPorts
 	
+
 
      /**
       * called when model is started.
@@ -273,6 +288,22 @@ public class ECMAScriptInterpreterInstance extends AbstractRuntimeComponentInsta
       @Override
       public void start()
       {
+          ScriptEngineManager factory = new ScriptEngineManager();
+          // create JavaScript engine
+          engine = factory.getEngineByName("JavaScript");
+          engine.put("output", opOutputPorts);
+          engine.put("eventout", etpEventTriggerPorts);
+
+          try {
+        	  System.out.println("Opening " + propScriptname + " ...");
+        	
+			engine.eval(new FileReader(propScriptname));
+			
+			scriptclass = engine.get("scriptclass");
+			
+          } catch (FileNotFoundException | ScriptException e) {
+        	  e.printStackTrace();
+          }          
           super.start();
       }
 
@@ -300,7 +331,7 @@ public class ECMAScriptInterpreterInstance extends AbstractRuntimeComponentInsta
       @Override
       public void stop()
       {
-
           super.stop();
+  		  engine = null;
       }
 }
