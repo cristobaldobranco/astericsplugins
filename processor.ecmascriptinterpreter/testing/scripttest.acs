@@ -183,6 +183,14 @@
       </ports>
       <properties>
         <property name="scriptname" value="c:\script.js" />
+        <property name="value1" value=" asdf" />
+        <property name="value2" value="bla" />
+        <property name="value3" value="" />
+        <property name="value4" value=" fd" />
+        <property name="value5" value="alb" />
+        <property name="value6" value="" />
+        <property name="value7" value="" />
+        <property name="value8" value="" />
       </properties>
       <layout>
         <posX>211</posX>

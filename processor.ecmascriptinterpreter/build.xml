@@ -2,7 +2,7 @@
 
     <property name="component.id" value="processor.ECMAScriptInterpreter"/>
     <!-- set global properties for this build -->
-    <property name="arecodelocation" location="../../../../eclipseworkspace/AsTeRICS/ARE"/>
+    <property name="arecodelocation" location="d:/eclipseworkspace/AsTeRICS/ARE"/>
     <property name="build" location="../out/production/${component.id}"/>
     <property name="src.java" location="src/main/java"/>
     <property name="dist" location=".."/>
@@ -28,7 +28,7 @@
   </target>
 
   <target name="compile" depends="init" description="compile the source ">
-    <javac  includeantruntime="false" srcdir="${src.java}" destdir="${build}" verbose="true" debug="${debug}" 
+    <javac  includeantruntime="false" srcdir="${src.java}" destdir="${build}" verbose="true" debug="true" 
            classpath="${classpath}"> <classpath refid="asterics.classpath"/>
      </javac>
   </target>

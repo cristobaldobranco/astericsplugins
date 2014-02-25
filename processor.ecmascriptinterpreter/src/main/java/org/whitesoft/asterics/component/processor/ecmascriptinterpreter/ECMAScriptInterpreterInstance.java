@@ -28,8 +28,13 @@
 package org.whitesoft.asterics.component.processor.ecmascriptinterpreter;
 
 
+import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Writer;
 
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
@@ -43,12 +48,32 @@ import eu.asterics.mw.model.runtime.IRuntimeInputPort;
 import eu.asterics.mw.model.runtime.IRuntimeOutputPort;
 import eu.asterics.mw.model.runtime.impl.DefaultRuntimeEventTriggererPort;
 import eu.asterics.mw.model.runtime.impl.DefaultRuntimeOutputPort;
+import eu.asterics.mw.services.AREServices;
 
 /**
  * 
- * <Describe purpose of this module>
+ * This component is a general purpose processor that can relays the input and
+ * incoming events to a script compatible to the ECMA script specification (e.g.
+ * JavaScript). The script is specified by the property scriptname. If the property
+ * is left empty, the component will load the file "script.js" from local storage.
+ * If this file does not exist, the component will generate the file in local storage
+ * and fill it with a default "pass-through" script. 
  * 
+ *  There are certain constraints for the script:
+ *  - the script has to contain an object named scriptclass.
+ *  - the object has to implement a method dataInput(input_index, input_data)
+ *  - the object has to implement a method eventInput(event_index)
+ *  
+ *  The script is provided with the following external variables:
+ *  - output:   an array of size 8 representing 8 IRuntimeOutputPorts
+ *  - eventout: an array of size 8 representing 8 IRuntimeEventTriggererPorts
+ *  - property: an array of size 8 holding strings with the property inputs from the components property fields 
  * 
+ *  The sendData method of the output variables has to be called with a string.
+ *  If necessary this needs to be converted into a Java string, this can be done like this:
+ *  
+ *  	str = new java.lang.String(in_data);
+ *	    output[in_nb].sendData(str.getBytes());
  *  
  * @author Christoph Weiss [christoph.weiss@gmail.com]
  *         Date: 
@@ -65,6 +90,7 @@ public class ECMAScriptInterpreterInstance extends AbstractRuntimeComponentInsta
 	// Usage of an event trigger port e.g.: etpMyEtPort.raiseEvent();
 
 	String propScriptname = "";
+	String [] propValue = new String[NUMBER_OF_PROPS];
 
 	// declare member variables here
 
@@ -75,7 +101,29 @@ public class ECMAScriptInterpreterInstance extends AbstractRuntimeComponentInsta
     static final int NUMBER_OF_OUTPUTS = 8;
     static final int NUMBER_OF_EVENT_INPUTS = 8;
     static final int NUMBER_OF_EVENT_OUTPUTS = 8;
+    static final int NUMBER_OF_PROPS = 8;
     
+    static final String defaultscriptcontent =
+    		"// the script is provided with the following external vars:\n" + 
+    		"// output:   an array of size 8 representing 8 IRuntimeOutputPorts\n" + 
+    		"// eventout: an array of size 8 representing 8 IRuntimeEventTriggererPorts\n" +
+    		"// property: an array of size 8 holding strings with the property inputs from the components property fields\n\n" + 
+    		"function clazz(dataout, evout) {\n\n"+ 
+    		 
+    		"	this.dataInput = function(in_nb, in_data) {\n" +
+    		"// the next line shows how to access the properties\n" +
+    		"//		in_data = in_data.concat(property[in_nb]);\n" +
+    		"		str = new java.lang.String(in_data);\n" +
+    		"		output[in_nb].sendData(str.getBytes());\n" +
+    		"	};\n\n" + 
+    			
+    		"	this.eventInput = function(ev_nb) {\n" +
+    		"		eventout[ev_nb].raiseEvent();\n" +
+    		"	};\n" +
+    		"};\n\n" +
+
+    		"var scriptclass = new clazz();\n\n";
+
    /**
     * The class constructor.
     */
@@ -101,6 +149,11 @@ public class ECMAScriptInterpreterInstance extends AbstractRuntimeComponentInsta
     	for (int i = 0; i < etpEventTriggerPorts.length; i++)
     	{
     		etpEventTriggerPorts[i] = new DefaultRuntimeEventTriggererPort();
+    	}
+    	
+    	for (int i = 0; i < propValue.length; i++)
+    	{
+    		propValue[i] = "";
     	}
     	
     }
@@ -183,6 +236,13 @@ public class ECMAScriptInterpreterInstance extends AbstractRuntimeComponentInsta
 			return propScriptname;
 		}
 
+		if (propertyName.startsWith("value"))
+		{
+			String strstr = propertyName.replace("value", "");
+			int idx = Integer.parseInt(strstr);
+			return propValue[idx - 1];
+		}
+		
         return null;
     }
 
@@ -200,7 +260,16 @@ public class ECMAScriptInterpreterInstance extends AbstractRuntimeComponentInsta
 			return oldValue;
 		}
  
-        return null;
+		if (propertyName.startsWith("value"))
+		{
+			String strstr = propertyName.replace("value", "");
+			int idx = Integer.parseInt(strstr);
+			Object oldValue =  propValue[idx - 1];
+			propValue[idx - 1] = (String) newValue;
+			return oldValue;
+		}
+
+		return null;
     }
 
      /**
@@ -279,8 +348,7 @@ public class ECMAScriptInterpreterInstance extends AbstractRuntimeComponentInsta
 	// the script is provided with the vars:
 	// output:   an array of size 8 representing 8 IRuntimeOutputPorts
 	// eventout: an array of size 8 representing 8 IRuntimeEventTriggererPorts
-	
-
+	// property: an array of size 8 holding strings with the property inputs from the components property fields 
 
      /**
       * called when model is started.
@@ -293,14 +361,52 @@ public class ECMAScriptInterpreterInstance extends AbstractRuntimeComponentInsta
           engine = factory.getEngineByName("JavaScript");
           engine.put("output", opOutputPorts);
           engine.put("eventout", etpEventTriggerPorts);
+          engine.put("property", propValue);
 
           try {
-        	  System.out.println("Opening " + propScriptname + " ...");
-        	
-			engine.eval(new FileReader(propScriptname));
-			
-			scriptclass = engine.get("scriptclass");
-			
+
+        	  File file = null;
+        	  if (propScriptname.isEmpty())
+        	  {
+        		  file = AREServices.instance.getLocalStorageFile(this, "script.js");
+        		  boolean fillScript = false;
+        		  BufferedReader br = new BufferedReader(new FileReader(file));     
+        		  try {
+        			  if (br.readLine() == null) 
+        			  {
+        				  fillScript = true;
+					  }
+            		  br.close();
+        		  } catch (IOException e) {
+					e.printStackTrace();
+        		  }
+        		  
+        		  if (fillScript)
+        		  {
+        			  try {
+						Writer writer = new FileWriter(file);
+						writer.write(defaultscriptcontent);
+						writer.flush();
+						writer.close();
+        			  } catch (IOException e) {
+        				  e.printStackTrace();
+        			  }
+        		  }
+        	  }
+
+        	  System.out.println("Opening " + 
+        			  (propScriptname.isEmpty() ? "default script from local storage" : propScriptname)
+        			  + " ...");
+        	  
+        	  FileReader reader;
+        	  if (propScriptname.isEmpty())
+        		  reader = new FileReader(file);
+        	  else
+        		  reader = new FileReader(propScriptname);
+        	  
+        	  engine.eval(reader);
+        	  scriptclass = engine.get("scriptclass");
+
           } catch (FileNotFoundException | ScriptException e) {
         	  e.printStackTrace();
           }          
