@@ -36,6 +36,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 
+import javax.script.Compilable;
+import javax.script.CompiledScript;
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -95,6 +97,7 @@ public class ECMAScriptInterpreterInstance extends AbstractRuntimeComponentInsta
 	// declare member variables here
 
 	ScriptEngine engine;
+	CompiledScript cs = null;
 	Object scriptclass = null;	
     
     static final int NUMBER_OF_INPUTS = 8;
@@ -289,7 +292,8 @@ public class ECMAScriptInterpreterInstance extends AbstractRuntimeComponentInsta
 		{
 			if (scriptclass != null)
 			{
-				Invocable inv = (Invocable) engine;
+				Invocable inv = (Invocable) (cs == null ? engine : cs.getEngine());
+
 				try {
 					inv.invokeMethod(scriptclass, "dataInput", index, new String(data));
 				} catch (NoSuchMethodException | ScriptException e) {
@@ -334,7 +338,7 @@ public class ECMAScriptInterpreterInstance extends AbstractRuntimeComponentInsta
 		{
 			if (scriptclass != null)
 			{
-				Invocable inv = (Invocable) engine;
+				Invocable inv = (Invocable) (cs == null ? engine : cs.getEngine());
 				try {
 					inv.invokeMethod(scriptclass, "eventInput", index);
 				} catch (NoSuchMethodException | ScriptException e) {
@@ -404,8 +408,22 @@ public class ECMAScriptInterpreterInstance extends AbstractRuntimeComponentInsta
         	  else
         		  reader = new FileReader(propScriptname);
         	  
-        	  engine.eval(reader);
-        	  scriptclass = engine.get("scriptclass");
+              if (engine instanceof Compilable)
+              {
+                  System.out.println("Compiling " + 
+                		  	(propScriptname.isEmpty() ? "default script from local storage" : propScriptname) + "...");
+                  
+                  Compilable compEngine = (Compilable)engine;
+                  cs = compEngine.compile(reader);
+                  cs.eval();
+              }
+              else
+                  engine.eval(reader);
+
+              if (cs != null)
+            	  scriptclass = cs.getEngine().get("scriptclass");
+              else
+            	  scriptclass = engine.get("scriptclass");
 
           } catch (FileNotFoundException | ScriptException e) {
         	  e.printStackTrace();
@@ -439,5 +457,6 @@ public class ECMAScriptInterpreterInstance extends AbstractRuntimeComponentInsta
       {
           super.stop();
   		  engine = null;
+  		  cs = null;
       }
 }
