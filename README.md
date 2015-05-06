@@ -11,6 +11,8 @@ Generally the build.xml of the plugins has been extended with the property **are
 ECMA Script Interpreter
 ===============
 
+ This component has since been integrated into the AsTeRICS codebase.
+ 
  This component is a general purpose processor that can relays the input and
  incoming events to a script compatible to the ECMA script specification (e.g.
  JavaScript). The script is specified by the property scriptname. If the property
